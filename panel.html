@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌸 Discord 翻译机器人 - Sakura Panel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 樱花飘落背景 -->
+  <div class="sakura-container"></div>
+  
+  <div class="container">
+    <!-- 顶部标题栏 -->
+    <div class="header">
+      <div class="header-title">
+        <span class="icon">🌸</span>
+        <h1>Discord 翻译机器人</h1>
+        <span class="version">Sakura v3.0</span>
+      </div>
+      <div class="status-badge" id="bot-status">
+        <span class="status-dot"></span>
+        <span class="status-text">加载中...</span>
+      </div>
+    </div>
+    
+    <div class="content">
+      <!-- 登录/访客模式提示 -->
+      <div id="auth-section">
+        <div class="readonly-banner" id="readonly-banner" style="display: none;">
+          🔒 访客模式 - 仅可查看配置
+          <button class="btn-link" onclick="showLoginModal()">管理员登录</button>
+        </div>
+        
+        <div class="admin-info" id="admin-info" style="display: none;">
+          ✅ 管理员模式 | 
+          <a href="#" onclick="logout()" class="btn-link">退出登录</a>
+        </div>
+      </div>
+
+      <!-- 核心信息卡片 -->
+      <div class="card-grid">
+        <div class="info-card">
+          <div class="card-icon">🚀</div>
+          <div class="card-content">
+            <div class="card-label">运行时长</div>
+            <div class="card-value" id="uptime">00:00:00</div>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="card-icon">📅</div>
+          <div class="card-content">
+            <div class="card-label">最后活跃</div>
+            <div class="card-value" id="last-active">从未运行</div>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="card-icon">🌐</div>
+          <div class="card-content">
+            <div class="card-label">命令前缀</div>
+            <div class="card-value" id="cmd-prefix">!</div>
+          </div>
+        </div>
+        
+        <div class="info-card">
+          <div class="card-icon">🗣️</div>
+          <div class="card-content">
+            <div class="card-label">支持语言</div>
+            <div class="card-value" id="lang-count">8</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 配置区域 -->
+      <div class="section">
+        <div class="section-header">
+          <h2>⚙️ 机器人配置</h2>
+          <div class="section-actions">
+            <button class="btn-icon" onclick="refreshConfig()" title="刷新">🔄</button>
+          </div>
+        </div>
+        
+        <form id="config-form" onsubmit="saveConfig(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-icon">🤖</span>
+                Discord Bot Token
+              </label>
+              <div class="input-wrapper">
+                <input type="password" id="discord-token" name="discordToken" 
+                  placeholder="粘贴你的 Bot Token" readonly>
+                <button type="button" class="btn-toggle-password" onclick="togglePassword('discord-token')">👁️</button>
+              </div>
+              <span class="form-hint">格式: MTIzNDU2.GhJkLm.nOpQrStUvWxYz...</span>
+            </div>
+            
+            <div class="form-group">
+              <label>
+                <span class="label-icon">🔗</span>
+                翻译 API 地址
+              </label>
+              <input type="text" id="api-url" name="translateApiUrl" 
+                value="https://libretranslate.com" readonly>
+            </div>
+            
+            <div class="form-group">
+              <label>
+                <span class="label-icon">🔑</span>
+                翻译 API Key (可选)
+              </label>
+              <div class="input-wrapper">
+                <input type="password" id="api-key" name="translateApiKey" 
+                  placeholder="留空使用免费 API" readonly>
+                <button type="button" class="btn-toggle-password" onclick="togglePassword('api-key')">👁️</button>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>
+                <span class="label-icon">💬</span>
+                命令前缀
+              </label>
+              <input type="text" id="prefix" name="commandPrefix" 
+                value="!" maxlength="2" readonly>
+              <span class="form-hint">建议使用: ! / . $</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>
+              <span class="label-icon">🌍</span>
+              支持的语言代码
+            </label>
+            <textarea id="languages" name="supportedLanguages" 
+              rows="2" readonly>zh, en, ja, ko, fr, de, es, ru</textarea>
+            <span class="form-hint">用逗号分隔，例如: zh, en, ja, ko</span>
+          </div>
+          
+          <div class="form-actions" id="form-actions" style="display: none;">
+            <button type="submit" class="btn btn-primary">
+              <span>💾</span> 保存配置
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 机器人控制 -->
+      <div class="section" id="bot-control" style="display: none;">
+        <div class="section-header">
+          <h2>🎮 机器人控制</h2>
+        </div>
+        
+        <div class="control-panel">
+          <button class="btn btn-success" onclick="startBot()" id="btn-start">
+            <span>▶️</span> 启动机器人
+          </button>
+          <button class="btn btn-danger" onclick="stopBot()" id="btn-stop" disabled>
+            <span>⏹️</span> 停止机器人
+          </button>
+        </div>
+      </div>
+
+      <!-- 安全设置 -->
+      <div class="section" id="security-section" style="display: none;">
+        <div class="section-header">
+          <h2>🔒 安全设置</h2>
+        </div>
+        
+        <form id="password-form" onsubmit="changePassword(event)">
+          <div class="form-group">
+            <label>
+              <span class="label-icon">🔐</span>
+              新管理员密码
+            </label>
+            <input type="password" id="new-password" name="newPassword" 
+              placeholder="输入新密码（最少6位）" required>
+          </div>
+          <button type="submit" class="btn btn-secondary">
+            <span>🔑</span> 修改密码
+          </button>
+        </form>
+      </div>
+
+      <!-- 使用指南 -->
+      <div class="section">
+        <div class="section-header">
+          <h2>📖 使用指南</h2>
+        </div>
+        
+        <div class="guide-content">
+          <div class="guide-item">
+            <div class="guide-icon">1️⃣</div>
+            <div class="guide-text">
+              <strong>获取 Bot Token</strong>
+              <p>访问 <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a> 创建应用并获取 Token</p>
+            </div>
+          </div>
+          
+          <div class="guide-item">
+            <div class="guide-icon">2️⃣</div>
+            <div class="guide-text">
+              <strong>配置机器人</strong>
+              <p>在上方"机器人配置"中填写 Token，可选配置自定义翻译 API</p>
+            </div>
+          </div>
+          
+          <div class="guide-item">
+            <div class="guide-icon">3️⃣</div>
+            <div class="guide-text">
+              <strong>启动服务</strong>
+              <p>保存配置后，在"机器人控制"区域点击"启动机器人"</p>
+            </div>
+          </div>
+          
+          <div class="command-examples">
+            <div class="example-title">💡 命令示例</div>
+            <div class="example-list">
+              <code>!tr en 你好世界</code>
+              <code>!translate zh Hello</code>
+              <code>!help</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 日志面板 -->
+      <div class="section">
+        <div class="section-header">
+          <h2>📝 运行日志</h2>
+          <div class="section-actions">
+            <button class="btn-icon" onclick="clearLogs()" title="清空日志">🗑️</button>
+          </div>
+        </div>
+        
+        <div class="logs-container" id="logs">
+          <div class="log-entry log-success">
+            <span class="log-time">[00:00:00]</span>
+            <span class="log-msg">🌸 Sakura 系统就绪</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+      <div>🌸 Sakura Panel v3.0 | Powered by Discord.js</div>
+      <div>Made with 💖 by Zero Project</div>
+    </div>
+  </div>
+
+  <!-- 登录弹窗 -->
+  <div class="modal" id="login-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🔐 管理员登录</h3>
+        <button class="modal-close" onclick="closeLoginModal()">×</button>
+      </div>
+      <form onsubmit="login(event)">
+        <div class="form-group">
+          <label>管理员密码</label>
+          <input type="password" id="login-password" placeholder="请输入管理员密码" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">登录</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 全局状态
+    let isAdmin = false;
+    let config = {};
+    let startTime = Date.now();
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      loadConfig();
+      startUptime();
+      createSakuraEffect();
+    });
+
+    // 检查登录状态
+    function checkAuth() {
+      fetch('/api/auth/check')
+        .then(r => r.json())
+        .then(data => {
+          isAdmin = data.isAdmin;
+          updateAuthUI();
+        });
+    }
+
+    // 更新认证UI
+    function updateAuthUI() {
+      const readonlyBanner = document.getElementById('readonly-banner');
+      const adminInfo = document.getElementById('admin-info');
+      const formActions = document.getElementById('form-actions');
+      const botControl = document.getElementById('bot-control');
+      const securitySection = document.getElementById('security-section');
+      
+      if (isAdmin) {
+        readonlyBanner.style.display = 'none';
+        adminInfo.style.display = 'block';
+        formActions.style.display = 'flex';
+        botControl.style.display = 'block';
+        securitySection.style.display = 'block';
+        
+        // 移除只读属性（排除登录弹窗）
+        document.querySelectorAll('#config-form input, #config-form textarea').forEach(el => {
+          el.removeAttribute('readonly');
+        });
+      } else {
+        readonlyBanner.style.display = 'flex';
+        adminInfo.style.display = 'none';
+        formActions.style.display = 'none';
+        botControl.style.display = 'none';
+        securitySection.style.display = 'none';
+        
+        // 添加只读属性（只针对配置表单）
+        document.querySelectorAll('#config-form input, #config-form textarea').forEach(el => {
+          el.setAttribute('readonly', 'readonly');
+        });
+      }
+    }
+
+    // 加载配置
+    function loadConfig() {
+      fetch('/api/config')
+        .then(r => r.json())
+        .then(data => {
+          config = data;
+          updateConfigUI();
+          updateBotStatus();
+        })
+        .catch(err => {
+          addLog('配置加载失败: ' + err.message, 'error');
+        });
+    }
+
+    // 更新配置UI
+    function updateConfigUI() {
+      document.getElementById('discord-token').value = config.discordToken || '';
+      document.getElementById('api-url').value = config.translateApiUrl || 'https://libretranslate.com';
+      document.getElementById('api-key').value = config.translateApiKey || '';
+      document.getElementById('prefix').value = config.commandPrefix || '!';
+      document.getElementById('languages').value = config.supportedLanguages ? config.supportedLanguages.join(', ') : 'zh, en, ja, ko, fr, de, es, ru';
+      
+      document.getElementById('cmd-prefix').textContent = config.commandPrefix || '!';
+      document.getElementById('lang-count').textContent = config.supportedLanguages ? config.supportedLanguages.length : 8;
+      document.getElementById('last-active').textContent = config.lastSuccessTime || '从未运行';
+    }
+
+    // 更新机器人状态
+    function updateBotStatus() {
+      const statusBadge = document.getElementById('bot-status');
+      const btnStart = document.getElementById('btn-start');
+      const btnStop = document.getElementById('btn-stop');
+      
+      if (config.botStatus === 'online') {
+        statusBadge.className = 'status-badge online';
+        statusBadge.innerHTML = '<span class="status-dot"></span><span class="status-text">● 运行中</span>';
+        if (btnStart) btnStart.disabled = true;
+        if (btnStop) btnStop.disabled = false;
+      } else {
+        statusBadge.className = 'status-badge offline';
+        statusBadge.innerHTML = '<span class="status-dot"></span><span class="status-text">● 离线</span>';
+        if (btnStart) btnStart.disabled = false;
+        if (btnStop) btnStop.disabled = true;
+      }
+    }
+
+    // 保存配置
+    function saveConfig(event) {
+      event.preventDefault();
+      
+      if (!isAdmin) {
+        alert('需要管理员权限！');
+        return;
+      }
+      
+      const formData = new FormData(event.target);
+      const data = {
+        discordToken: formData.get('discordToken'),
+        translateApiUrl: formData.get('translateApiUrl'),
+        translateApiKey: formData.get('translateApiKey'),
+        commandPrefix: formData.get('commandPrefix'),
+        supportedLanguages: formData.get('supportedLanguages')
+      };
+      
+      fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(r => r.json())
+      .then(result => {
+        if (result.success) {
+          addLog('配置保存成功', 'success');
+          loadConfig();
+        } else {
+          addLog('配置保存失败', 'error');
+        }
+      })
+      .catch(err => {
+        addLog('保存失败: ' + err.message, 'error');
+      });
+    }
+
+    // 启动机器人
+    function startBot() {
+      if (!isAdmin) return;
+      
+      addLog('正在启动机器人...', 'step');
+      
+      fetch('/api/bot/start', { method: 'POST' })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            addLog('机器人启动成功', 'success');
+            setTimeout(loadConfig, 1000);
+          } else {
+            addLog('启动失败: ' + result.message, 'error');
+          }
+        });
+    }
+
+    // 停止机器人
+    function stopBot() {
+      if (!isAdmin) return;
+      
+      addLog('正在停止机器人...', 'step');
+      
+      fetch('/api/bot/stop', { method: 'POST' })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            addLog('机器人已停止', 'warn');
+            setTimeout(loadConfig, 1000);
+          } else {
+            addLog('停止失败', 'error');
+          }
+        });
+    }
+
+    // 修改密码
+    function changePassword(event) {
+      event.preventDefault();
+      
+      if (!isAdmin) return;
+      
+      const newPassword = document.getElementById('new-password').value;
+      
+      if (newPassword.length < 6) {
+        alert('密码长度至少6位！');
+        return;
+      }
+      
+      fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword })
+      })
+      .then(r => r.json())
+      .then(result => {
+        if (result.success) {
+          alert('密码修改成功，请重新登录！');
+          logout();
+        } else {
+          alert('密码修改失败');
+        }
+      });
+    }
+
+    // 登录
+    function login(event) {
+      event.preventDefault();
+      
+      const password = document.getElementById('login-password').value;
+      
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      })
+      .then(r => r.json())
+      .then(result => {
+        if (result.success) {
+          isAdmin = true;
+          updateAuthUI();
+          closeLoginModal();
+          addLog('管理员登录成功', 'success');
+          loadConfig();
+        } else {
+          alert('密码错误！');
+        }
+      });
+    }
+
+    // 登出
+    function logout() {
+      fetch('/api/auth/logout', { method: 'POST' })
+        .then(() => {
+          isAdmin = false;
+          updateAuthUI();
+          addLog('已退出管理员模式', 'warn');
+        });
+    }
+
+    // 刷新配置
+    function refreshConfig() {
+      addLog('刷新配置...', 'step');
+      loadConfig();
+    }
+
+    // 清空日志
+    function clearLogs() {
+      const logsContainer = document.getElementById('logs');
+      logsContainer.innerHTML = '<div class="log-entry log-success"><span class="log-time">[00:00:00]</span><span class="log-msg">🌸 日志已清空</span></div>';
+    }
+
+    // 添加日志
+    function addLog(message, type = 'info') {
+      const logsContainer = document.getElementById('logs');
+      const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+      
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry log-${type}`;
+      
+      let icon = '';
+      if (type === 'success') icon = '🌸 ';
+      else if (type === 'error') icon = '❌ ';
+      else if (type === 'warn') icon = '⚠️ ';
+      else if (type === 'step') icon = '👉 ';
+      
+      logEntry.innerHTML = `
+        <span class="log-time">[${time}]</span>
+        <span class="log-msg">${icon}${message}</span>
+      `;
+      
+      logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+      
+      // 限制日志数量
+      while (logsContainer.children.length > 50) {
+        logsContainer.removeChild(logsContainer.lastChild);
+      }
+    }
+
+    // 运行时长计时器
+    function startUptime() {
+      setInterval(() => {
+        const diff = Date.now() - startTime;
+        const hours = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        
+        const uptimeEl = document.getElementById('uptime');
+        if (uptimeEl) {
+          uptimeEl.textContent = `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+        }
+      }, 1000);
+    }
+
+    function pad(n) {
+      return n.toString().padStart(2, '0');
+    }
+
+    // 切换密码可见性
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const btn = input.nextElementSibling;
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
+
+    // 弹窗控制
+    function showLoginModal() {
+      document.getElementById('login-modal').classList.add('active');
+    }
+
+    function closeLoginModal() {
+      document.getElementById('login-modal').classList.remove('active');
+      document.getElementById('login-password').value = '';
+    }
+
+    // 创建樱花飘落效果
+    function createSakuraEffect() {
+      const container = document.querySelector('.sakura-container');
+      
+      for (let i = 0; i < 10; i++) {
+        const sakura = document.createElement('div');
+        sakura.textContent = '🌸';
+        sakura.style.position = 'absolute';
+        sakura.style.fontSize = Math.random() * 10 + 15 + 'px';
+        sakura.style.left = Math.random() * 100 + '%';
+        sakura.style.opacity = Math.random() * 0.5 + 0.3;
+        sakura.style.animation = `sakura-fall ${Math.random() * 10 + 10}s infinite linear`;
+        sakura.style.animationDelay = Math.random() * 5 + 's';
+        container.appendChild(sakura);
+      }
+    }
+
+    // 点击弹窗外部关闭
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('login-modal');
+      if (e.target === modal) {
+        closeLoginModal();
+      }
+    });
+  </script>
+</body>
+</html>
