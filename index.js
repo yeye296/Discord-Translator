@@ -7,7 +7,27 @@ const session = require('express-session');
 const path = require('path');
 
 const app = express();
-const PORT = 25572;
+
+// 自动获取公网IP
+async function getPublicIP() {
+  try {
+    // 使用 ip.sb API 获取公网IP（和脚本中的 CF_IP 默认值一样）
+    const response = await axios.get('https://api.ip.sb/ip', { timeout: 3000 });
+    return response.data.trim();
+  } catch (error) {
+    try {
+      // 备用方案：使用 ipify
+      const response = await axios.get('https://api.ipify.org', { timeout: 3000 });
+      return response.data.trim();
+    } catch (err) {
+      return null;
+    }
+  }
+}
+
+// 环境变量配置
+const PORT = process.env.PORT || 443;
+let HOST = null; // 启动时自动获取公网IP
 
 // 配置文件路径
 const CONFIG_FILE = './.npm/sub.txt';
@@ -340,13 +360,23 @@ app.post('/api/bot/stop', (req, res) => {
 });
 
 // 启动 Web 服务器
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
+  // 自动获取公网IP
+  console.log('🔍 正在自动获取公网IP...');
+  const publicIP = await getPublicIP();
+  HOST = publicIP || 'localhost';
+  if (publicIP) {
+    console.log(`✅ 检测到公网IP: ${publicIP}`);
+  } else {
+    console.log('⚠️  无法获取公网IP，使用 localhost');
+  }
+  
   console.log('');
   console.log('╔════════════════════════════════════════════════════════╗');
   console.log('║       🤖 Discord 翻译机器人管理面板已启动            ║');
   console.log('╚════════════════════════════════════════════════════════╝');
   console.log('');
-  console.log(`🌐 访问地址: http://node1.wavehost.org:${PORT}`);
+  console.log(`🌐 访问地址: http://${HOST}:${PORT}`);
   console.log(`🌐 本地访问: http://localhost:${PORT}`);
   console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
